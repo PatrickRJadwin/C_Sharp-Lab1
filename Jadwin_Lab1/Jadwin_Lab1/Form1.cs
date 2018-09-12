@@ -6,6 +6,7 @@
  * * * * * * * * * * * * */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -23,25 +24,17 @@ namespace Jadwin_Lab1
         {
             InitializeComponent();
         }
-
+        
         // Determine total cost of oil/lube by checking if boolean is true
         private decimal oil_Lube_Charges(bool oilChkd, bool lubeChkd)
         {
             decimal oilLubeCharge = 0;
             const decimal oilChange = 26.00m;
             const decimal lubeJob = 18.00m;
+            List<decimal> charges = new List<decimal>() { oilChange, lubeJob };
+            List<bool> bools = new List<bool>() { oilChkd, lubeChkd };
 
-            // If oil is checked
-            if (oilChkd == true)
-            {
-                oilLubeCharge = oilLubeCharge + oilChange;
-            }
-
-            // If lube is checked
-            if (lubeChkd == true)
-            {
-                oilLubeCharge = oilLubeCharge + lubeJob;
-            }
+            oilLubeCharge = ifChkd(oilLubeCharge, charges, bools);
 
             return oilLubeCharge;
         }
@@ -52,18 +45,10 @@ namespace Jadwin_Lab1
             decimal flushCharge = 0;
             const decimal radFlush = 30.00m;
             const decimal transFlush = 80.00m;
+            List<decimal> charges = new List<decimal>() { radFlush, transFlush };
+            List<bool> bools = new List<bool>() { radChkd, transChkd };
 
-            // If radiator is checked
-            if (radChkd == true)
-            {
-                flushCharge = flushCharge + radFlush;
-            }
-
-            // If transmission is checked
-            if (transChkd == true)
-            {
-                flushCharge = flushCharge + transFlush;
-            }
+            flushCharge = ifChkd(flushCharge, charges, bools);
 
             return flushCharge;
         }
@@ -75,24 +60,10 @@ namespace Jadwin_Lab1
             const decimal inspection = 15.00m;
             const decimal rplcMuff = 100.00m;
             const decimal tireRot = 20.00m;
+            List<decimal> charges = new List<decimal>() { inspection, rplcMuff, tireRot};
+            List<bool> bools = new List<bool>() { inspChkd, muffChkd, tireChkd };
 
-            // If inspection is checked
-            if (inspChkd == true)
-            {
-                miscCharge = miscCharge + inspection;
-            }
-
-            // If muffler replacement is checked
-            if (muffChkd == true)
-            {
-                miscCharge = miscCharge + rplcMuff;
-            }
-
-            // If tire rotation is checked
-            if (tireChkd == true)
-            {
-                miscCharge = miscCharge + tireRot;
-            }
+            miscCharge = ifChkd(miscCharge, charges, bools);
 
             return miscCharge;
         }
@@ -118,65 +89,86 @@ namespace Jadwin_Lab1
             return total;
         }
 
-        // Method to handle calculate button event
-        private void calc_Click(object sender, EventArgs e)
+        // Determines charges based on if checkboxes are checked
+        private decimal ifChkd(decimal totCharge, List<decimal> charges, List<bool> bools)
+        {
+            // loop cycles through boolean w/ checked or not checked
+            for (int i = 0; i < bools.Count; i++)
+            {
+                // adds to total charge if checked
+                if (bools[i] == true)
+                {
+                    totCharge = totCharge + charges[i];
+                }
+                else
+                {
+                    continue;
+                }
+            }
+            return totCharge;
+        }
+
+        // Checks part and labor boxes for valid input
+        private List<decimal> err_Handl()
         {
             // Booleans to determine if text field is number
-            bool prtsIsNum = true;
-            bool lbrIsNum = true;
+            List<bool> isNum = new List<bool> { true, true };
 
             // Get text from text fields
-            string str = partsBox.Text.Trim();
-            string str2 = laborBox.Text.Trim();
+            List<string> str = new List<string>() { partsBox.Text.Trim(), laborBox.Text.Trim()};
 
             // parts and labor default values
             decimal parts = 0;
             decimal labor = 0;
-            
+
             // Check if box is empty, if not, parse for number, if string set to false
             if (partsBox.Text != "")
             {
-                prtsIsNum = decimal.TryParse(str, out parts);
+                isNum[0] = decimal.TryParse(str[0], out parts);
             }
 
             if (laborBox.Text != "")
             {
-                lbrIsNum = decimal.TryParse(str2, out labor);
+                isNum[1] = decimal.TryParse(str[1], out labor);
             }
 
+            List<decimal> prtsLabor = new List<decimal>() { parts, labor };
+
             // if either is not a valid digit, print error
-            if (prtsIsNum == false || lbrIsNum == false)
+            if (isNum[0] == false || isNum[1] == false)
             {
                 MessageBox.Show("Not a valid number!!!!!!");
             }
-            
-            else
-            {
-                // boolean if checkbox is checked
-                bool oilChkd = oilChange.Checked;
-                bool lubeChkd = lubeJob.Checked;
-                bool radChkd = radFlush.Checked;
-                bool transChkd = transFlush.Checked;
-                bool inspChkd = inspect.Checked;
-                bool muffChkd = rplcMuffler.Checked;
-                bool tireChkd = tireRot.Checked;
 
-                // Link values to methods and store in decimal var
-                decimal oilLube = oil_Lube_Charges(oilChkd, lubeChkd);
-                decimal flush = flush_Charges(radChkd, transChkd);
-                decimal misc = misc_Charges(inspChkd, muffChkd, tireChkd);
-                decimal other = other_Charges(parts, labor);
-                decimal tax = tax_Charges(parts);
+            return prtsLabor;
+        }
 
-                // Calculate total
-                decimal total = total_Charges(oilLube, flush, misc, other, tax);
+        // Method to handle calculate button event
+        private void calc_Click(object sender, EventArgs e)
+        {
+            List<decimal> errHandlr = err_Handl();
+            decimal parts = errHandlr[0];
+            decimal labor = errHandlr[1];
 
-                // Set summary text boxes
-                srvcLaborBox.Text = labor.ToString("c2");
-                sumPartsBox.Text = parts.ToString("c2");
-                taxBox.Text = tax.ToString("c2");
-                totBox.Text = total.ToString("c2");
-            }
+            // boolean if checkbox is checked
+            List<bool> chkd = new List<bool>() { oilChange.Checked, lubeJob.Checked, radFlush.Checked,
+                transFlush.Checked, inspect.Checked, rplcMuffler.Checked, tireRot.Checked};
+
+            // Link values to methods and store in decimal var
+            decimal oilLube = oil_Lube_Charges(chkd[0], chkd[1]);
+            decimal flush = flush_Charges(chkd[2], chkd[3]);
+            decimal misc = misc_Charges(chkd[4], chkd[5], chkd[6]);
+            decimal other = other_Charges(parts, labor);
+            decimal tax = tax_Charges(parts);
+
+            // Calculate total
+            decimal total = total_Charges(oilLube, flush, misc, other, tax);
+
+            // Set summary text boxes
+            srvcLaborBox.Text = labor.ToString("c2");
+            sumPartsBox.Text = parts.ToString("c2");
+            taxBox.Text = tax.ToString("c2");
+            totBox.Text = total.ToString("c2");
 
         }
 
